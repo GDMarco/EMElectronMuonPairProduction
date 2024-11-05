@@ -48,7 +48,7 @@ void EMElectronMuonPairProduction::setThinning(double thinning) {
 
 void EMElectronMuonPairProduction::initRate(std::string filename) {
     std::ifstream infile(filename.c_str());
-
+    
     if (!infile.good())
         throw std::runtime_error("EMElectronMuonPairProduction: could not open file " + filename);
 
@@ -72,7 +72,7 @@ void EMElectronMuonPairProduction::initRate(std::string filename) {
 
 void EMElectronMuonPairProduction::initCumulativeRate(std::string filename) {
     std::ifstream infile(filename.c_str());
-
+    
     if (!infile.good())
         throw std::runtime_error("EMElectronMuonPairProduction: could not open file " + filename);
 
@@ -111,7 +111,7 @@ void EMElectronMuonPairProduction::initCumulativeRate(std::string filename) {
 
 void EMElectronMuonPairProduction::initInelasticity(std::string filename) {
     std::ifstream infile(filename.c_str());
-
+    
     if (!infile.good())
         throw std::runtime_error("EMElectronMuonPairProduction: could not open file " + filename);
     
@@ -133,9 +133,6 @@ void EMElectronMuonPairProduction::initInelasticity(std::string filename) {
     }
     infile.close();
 }
-
-// maybe to rewrite according to the inelasticity...
-// class PPSecondariesEnergyDistribution
    
 void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) const {
     // scale particle energy instead of background photon energy
@@ -195,8 +192,6 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
         Random randInt;
         int randIntPM = (randInt.randUniform(0, 1) < 0.5) ? -1 : 1;
         
-        std::cout << "RandIntPM: " << randIntPM << std::endl;
-        
         // apply sampling
         if (random.rand() < pow(inelasticityMuHe, thinning)) {
             double w = 1. / pow(inelasticityMuHe, thinning);
@@ -227,7 +222,8 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
 }
 
 void EMElectronMuonPairProduction::process(Candidate *candidate) const {
-    // check if photon
+    
+    // check if electron
     if (std::abs(candidate->current.getId()) != 11)
         return;
 
