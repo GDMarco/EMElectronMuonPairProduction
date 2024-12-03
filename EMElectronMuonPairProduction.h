@@ -26,7 +26,7 @@ class EMElectronMuonPairProduction : public Module
 {
 private:
     ref_ptr<PhotonField> photonField;     // target photon field
-    bool haveMuons;                    // add secondary pions to simulation
+    bool haveMuons;                    // add secondary muons to simulation
     bool haveElectron;               // add secondary electron to simulation
     double limit;                // limit the step to a fraction of the mean free path
     double thinning;                    // factor of the thinning (0: no thinning, 1: maximum thinning)
@@ -42,7 +42,9 @@ private:
     std::vector< std::vector<double> > tabCDF;  //!< cumulative interaction rate
     
     std::vector<double> tabsIn; //!< inelasticity s table, given in [eV**2]
-    std::vector< std::vector<double> > tabInelasticity; //!< inelasticity tables for the leading and lower energy muons
+    std::vector<double> tab2Mu; //!< inelasticity table for the energy fraction of the two muons
+    std::vector<double> tabHeMu; //!< inelasticity table for the leading muon
+    std::vector<double> tabLeMu; //!< inelasticity table for the low-energy muon
 
 public:
     /** Constructor

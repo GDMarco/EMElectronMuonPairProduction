@@ -116,17 +116,19 @@ void EMElectronMuonPairProduction::initInelasticity(std::string filename) {
         throw std::runtime_error("EMElectronMuonPairProduction: could not open file " + filename);
     
     tabsIn.clear();
-    tabInelasticity.clear();
+    tab2Mu.clear();
+    tabHeMu.clear();
+    tabLeMu.clear();
     
     while (infile.good()) {
         if (infile.peek() != '#') {
             double a, b, c, d;
             infile >> a >> b >> c >> d;
             if (infile) {
-                tabsIn.push_back(a * eV * eV);
-                
-                std::vector<double> row = {b, c, d}; // 1st col: energy fraction of the 2 muons, 2nd: energy fraction of the high-energy muon, 3rd: low-energy muon fraction. From MUNHECA code: https://github.com/afesmaeili/MUNHECA/blob/main/Tables/Inelasticity_EMPP.txt.
-                tabInelasticity.push_back(row); // inelasticity is dimensionless
+                this->tabsIn.push_back(a * eV * eV);
+                this->tab2Mu.push_back(b);
+                this->tabHeMu.push_back(c);
+                this->tabLeMu.push_back(d);
             }
         }
         infile.ignore(std::numeric_limits < std::streamsize > ::max(), '\n');
@@ -158,28 +160,13 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
     double hi = tabs[j];
     double s = lo + random.rand() * (hi - lo);
     
-    std::vector<double> fEl;
-    std::vector<double> fMuHe;
-    std::vector<double> fMuLe;
-    
-    // size_t cols = s[0].size();
-    size_t rows = this->tabsIn.size();
-    
-    for (size_t i; i <= rows; ++i) {
-        fEl.push_back(tabInelasticity[i][0]);
-        fMuHe.push_back(tabInelasticity[i][1]);
-        fMuLe.push_back(tabInelasticity[i][2]);
-    }
-    
     if (haveMuons) {
         // sample muon+ / muon- energy
-        double inelasticityMuHe = interpolate(s, this->tabsIn, fMuHe);
-        double inelasticityMuLe = interpolate(s, this->tabsIn, fMuLe);
+        double inelasticityMuHe = interpolate(s, this->tabsIn, this->tabHeMu);
+        double inelasticityMuLe = interpolate(s, this->tabsIn, this->tabHeMu);
         
-        double EmuHe = inelasticityMuHe * E; // it is assumed that the leading particle is the positively charged pion, not sure it is a good approx
-        
+        double EmuHe = inelasticityMuHe * E;
         double EmuLe = inelasticityMuLe * E;
-        // double f = EpiP / E; // this is inelasticity itself
         
         // for some backgrounds Ee=nan due to precision limitations.
         if (not std::isfinite(EmuLe) || not std::isfinite(EmuHe))
@@ -189,8 +176,7 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
         Vector3d pos = random.randomInterpolatedPosition(candidate->previous.getPosition(), candidate->current.getPosition());
         
         // create a random number + or - 1 to randomly select the leading particle
-        Random randInt;
-        int randIntPM = (randInt.randUniform(0, 1) < 0.5) ? -1 : 1;
+        int randIntPM = (random.randUniform(0, 1) < 0.5) ? -1 : 1;
         
         // apply sampling
         if (random.rand() < pow(inelasticityMuHe, thinning)) {
@@ -205,7 +191,7 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
     
     if (haveElectron) {
         
-        double inelasticityEl = interpolate(s, this->tabsIn, fEl);
+        double inelasticityEl = interpolate(s, this->tabsIn, this->tab2Mu);
         double Eel = E * (1 - inelasticityEl);
         
         if (not std::isfinite(Eel))
@@ -226,7 +212,7 @@ void EMElectronMuonPairProduction::process(Candidate *candidate) const {
     // check if electron
     if (std::abs(candidate->current.getId()) != 11)
         return;
-
+    
     // scale particle energy instead of background photon energy
     double z = candidate->getRedshift();
     double E = candidate->current.getEnergy() * (1 + z);
@@ -234,11 +220,11 @@ void EMElectronMuonPairProduction::process(Candidate *candidate) const {
     // check if in tabulated energy range
     if ((E < tabEnergy.front()) or (E > tabEnergy.back()))
         return;
-
+    
     // interaction rate
     double rate = interpolate(E, tabEnergy, tabRate);
     rate *= pow_integer<2>(1 + z) * photonField->getRedshiftScaling(z);
-
+    
     // run this loop at least once to limit the step size
     double step = candidate->getCurrentStep();
     Random &random = Random::instance();
