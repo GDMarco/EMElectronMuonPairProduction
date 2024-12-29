@@ -184,8 +184,10 @@ void EMElectronMuonPairProduction::performInteraction(Candidate *candidate) cons
             candidate->addSecondary(randIntPM * 13, EmuHe / (1 + z), pos, w, interactionTag); // positively charged muon
         }
         if (random.rand() < pow(1 - inelasticityMuLe, thinning)){
-            double w = 1. / pow(1 - inelasticityMuLe, thinning);
-            candidate->addSecondary(randIntPM * -13, EmuLe / (1 + z), pos, w, interactionTag);
+            if (EmuLe >= mmc2) {
+                double w = 1. / pow(1 - inelasticityMuLe, thinning);
+                candidate->addSecondary(randIntPM * -13, EmuLe / (1 + z), pos, w, interactionTag);
+            }
         }
     }
     
